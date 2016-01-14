@@ -37,7 +37,7 @@
     ],
     "dependencies": {
         "fs-extra": "*",
-        "lodash": "*",
+        "lodash": "3.10.1",
         "elementtree": "*",
         "plist": "*",
         "xcode": "*",
