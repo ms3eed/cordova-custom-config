@@ -39,7 +39,10 @@ var resolveDependencies = (function(){
       }
       if(data['dependencies']){
         for(var k in data['dependencies']){
-          modules.push(k);
+	  var module = [];
+	  module.push(k); 
+	  module.push(data['dependencies'][k]);
+          modules.push(module);
         }
         installRequiredNodeModules(function(){
           logger.debug('All module dependencies are installed');
@@ -73,27 +76,30 @@ var resolveDependencies = (function(){
    * @param {String} moduleName
    * @param {Callback(error)} callback
    */
-  function installNodeModule(moduleName, callback) {
+  function installNodeModule(module, callback) {
     var tries = 0;
     function checkInstall(err){
-      if (isNodeModuleInstalled(moduleName)) {
+      if (isNodeModuleInstalled(module[0])) {
         logger.debug('Node module ' + moduleName + ' is found');
         callback();
         return;
       }
       if(tries < MAX_RETRIES){
-        logger.debug('Can\'t find module ' + moduleName + ', running npm install');
+        logger.debug('Can\'t find module ' + module[0] + ', running npm install');
         doInstall();
         tries++;
       }else if(err){
         callback(err);
       }else{
-        callback("Failed to install '"+moduleName+"' after "+MAX_RETRIES+" attempts");
+        callback("Failed to install '"+module[0]+"' after "+MAX_RETRIES+" attempts");
       }
     }
 
     function doInstall(){
-      var cmd = 'npm install ' + moduleName;
+	if(module[1] != '*')
+	      var cmd = 'npm install ' + module[0]+'@'+module[1];
+	else
+	      var cmd = 'npm install ' + module[0];
       exec(cmd, function(err, stdout, stderr) {
         setTimeout(checkInstall.bind(this, err), POST_INSTALL_DELAY);
       });
@@ -110,14 +116,16 @@ var resolveDependencies = (function(){
       return;
     }
 
-    var moduleName = modules.shift();
-    logger.debug('Installing "' + moduleName + '"');
-    installNodeModule(moduleName, function(err) {
+    var module = modules.shift();
+console.log(module[0]);
+console.log(module[1]);
+    logger.debug('Installing "' + module[0] + '"');
+    installNodeModule(module, function(err) {
       if (err) {
-        logger.error('Failed to install module ' + moduleName+": "+err);
+        logger.error('Failed to install module ' + module[0]+": "+err);
         return;
       } else {
-        logger.debug('Installed "' + moduleName + '"');
+        logger.debug('Installed "' + module[0] + '"');
         installRequiredNodeModules(callback);
       }
     });
